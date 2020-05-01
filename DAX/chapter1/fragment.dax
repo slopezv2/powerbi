@@ -1,0 +1,46 @@
+// Iterators
+ALLSales :=
+SUMX (
+    Sales,
+    Sales[ProductQuantity] * Sales[ProductPrice]
+)
+// Dax uses left outer join in the relationships
+EVALUATE
+SUMMARIZECOLUMNS (
+    Customers[CustomerName],
+    "SumOfSales", SUM ( Sales[SalesAmount])
+)
+// Dax is fuctional
+EVALUATE
+SUMMARIZECOLUMNS (
+    Customers[CustomerName],
+    FILTER (
+        Customers,
+        Customers[Continent] = "Europe"
+    ),
+    "SumOfSales", SUM( Sales[SalesAmount])
+)
+// Subqueries and conditions
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        Costumers[CustomerName],
+        "SumOfSales", SUM(Sales[SalesAmount])
+    )
+)
+// Calculation using historic data
+SamePeriodPreviousYearSales :=
+CALCULATE (
+    SUM ( Sales[Sales Amount]),
+    SAMEPERIODLASTYEAR ('Date'[Date])
+)
+// Return a value only if user is browsing the calendar hierarchy at the month level. Otherwise, return Blank
+SamePeriodPreviousYearSales :=
+IF (
+    ISINSCOPE ( 'Date'[Month]),
+    CALCULATE (
+        SUM (Sales[Sales Amount]),
+        SAMEPERIODLASTYEAR ('Date'[Date])
+    ),
+    BLANK()
+)

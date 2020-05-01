@@ -1,0 +1,29 @@
+//Table and column reference
+'Sales'[Quantity]
+// De facto standard: in column reference, mention table, in measure reference, do not include table
+Sales[Quantity] * 2 // Table column
+[Sales Amount] * 2 // Measure
+// Comments
+Sales[Quantity] * Sales[Net Price] -- single line Comment
+Sales[Quantity] * Sales[Unit Cost] // Another example
+/* multiline
+   message
+*/
+// Operators
+// Concat
+ = 5 &4 // 54
+ = "5" + "4" // 9
+// Depends on the operator
+// It is recommended to use explicit convertions
+VALUE("5") + VALUE ("4")
+// Integer is always 64 bits, decimal are double precision
+// Datetime, current day plus one day
+= TODAY () + 1
+// Dates in DAx are officially supported since May 1st, 1900
+// Boolean False = 0. True = 1
+// Each character is stored as unidoce, 16 bits, string comparisons are not case sensitive
+// Variant: When multiple value types can be returned:
+IF ([measure] >0, 1, "N/A" )
+// Operators
+//Comparison: =, <>, >, >=, <, <=
+// Logical: &&, ||, IN, NOT
