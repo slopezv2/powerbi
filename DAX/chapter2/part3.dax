@@ -1,0 +1,4 @@
+// Example using Mathematical functions
+FLOOR(Test[Value], 0.01)
+TRUNC(Test[Value], 2)
+// Text functions

@@ -1,0 +1,84 @@
+//Comparisons using Blanck
+BLANK () = 0 // TRUE
+BLANK () = "" // True
+Sales[DiscountPerc] = 0 // True for 0 or BLANK
+Sales[Clerk] = "" // True for "" or Blank
+ISBLANK ( Sales[Clerk]) // Only TRUE for BLANK
+// Intercept errors:
+// 1. IFERROR
+= IFERROR (Sales[Quantity] * Sales[Price], BLANK ())
+= IFERROR (SQRT (Test[Omega]), BLANK ())
+// 2. ISERROR
+IF (
+    ISERROR ( Sales[Quantity] * Sales[Price]),
+    BLANK (),
+    Sales[Quantity] * Sales[Price]
+)
+// 3. Check values
+IF (
+    ISBLANK (Sales[Weight]),
+    Sales[DefaultShippingCost],
+    Sales[Weight] * Sales[ShippinPrice]
+)
+// Performance comparison, IF ERROR evaluated for each row
+IFERROR (
+    SQRT ( Test[Omega]),
+    BLANK ()
+)
+//Better option
+IF (
+    Test[Omega] >= 0,
+    SQRT ( Test[Omega]),
+    BLANK ()
+)
+// Do not use ISERROR or IFERROR in nested calculations
+// Raise error
+IF (
+    Test[Temperature] >=0,
+    SQRT (Test[Temperature]),
+    ERROR ("Temperature cannot be a negative number, calculation aborted")
+)
+// Aggregations
+MIN(1,2) // Return the min value comparing both parameters
+MAX(11,2)
+// Iterators
+Sales[DaysToDeliver] = INT(Sales[Deliver Data] - Sales[Order Date]) // Iterates row by row
+AvgDelivery := AVERAGE ( Sales[DaysToDeliver])
+// Row by Row using AVERAGEX, can iterate the sales table and compute.
+AvgDelivery := 
+AVERAGEX (
+    Sales,
+    INT (Sales[Delivery Date] - Sales[Order Date])
+)
+// Count any data type apart from Boolean
+COUNT()
+// COUNTA operates on any type of column
+COUNTBLANK() // Count empty cells
+COUNTROWS() //rows in table
+DISTINCTCOUNT() // count unique values, blank included
+DISTINCTCOUNTNOBLANK // not include blank values
+// Switch DAX, easy to understand, not better than nested ifs.
+'Product'[Size] =
+SWITCH (
+    'Product'[Size],
+    "S", "Small",
+    "M", "Medium",
+    "L", "Large",
+    "XL", "Extra Large",
+    "Other"
+)
+SWITCH(
+    TRUE (),
+    Product[Size] = "XL" && Product[color] = "red", "Red and XL",
+    Product[Size] = "L" && Product[color] = "blue", "Blue and L"
+)
+//Using TRUE the first parameter means, "Return the first result where the condition evaluates to TRUE"
+// Information functions
+ISBLANK()
+ISERROR()
+ISLOGICAL()
+ISNONTEXT()
+ISNUMBER()
+ISTEXT()
+// Check if cast is possible only allowed trying and dealing with error, not possible using ISNUMBER
+Sales[IsPriceCorrect] = Not ISERROR(VALUE(Sales[Price]))

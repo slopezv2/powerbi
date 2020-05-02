@@ -27,3 +27,53 @@ IF ([measure] >0, 1, "N/A" )
 // Operators
 //Comparison: =, <>, >, >=, <, <=
 // Logical: &&, ||, IN, NOT
+// Anonymous tables
+// Only one column
+{ "Red", "Blue", "White" }
+// The same with parenthesis
+{("Red"), ("Blue"), ("White")}
+// Multiple columns in anonymous tables:
+{
+   ("A", 10, 1.3, DATE(2015,1,1), CURRENCY(199.99), TRUE),
+   ("B", 20, 2.5, DATE (2012,1,2), CURRENCY(123.21), FALSE)
+}
+// Using IN operator
+'Product'[Color] IN {"Red", "Blue", "White"}
+('Date'[Year], 'Date'[MonthNumber]) IN {(2017,2), (2018,4)}
+// Conditional statement, by default if the last parameter is not provided, BLANK is returned
+IF (
+   Sales[Quantity] > 1,
+   "Multi",
+   "Single"
+)
+/* 
+Calculated columns: 
+* In import: They are generated during database processing and not in query time but requires RAM.
+* In DirectQuery: Calculated on the fly when the tabular engine queries the source. It can lead to heavy queries. 
+*/
+// Computing the duration of an order
+Sales[DaysToDeliver] = INT  (Sales[Delivery Date] - Sales[Order Date]) // Because dates less dates equals dates we require to cast to int in order to get a int.
+// Measures
+GrossMarginPct := SUM (Sales[GrossMargin]) / SUM (Sales[SalesAmount]) // Book standard to diferentiate measure and calculated column
+// Context for mesures: Is evaluated in the context of a visual element or in the context of a Dax query.
+// Context for calculated columns: Evaluated at table and row basis level.
+// Using variables
+VAR TotalSales = SUM (Sales[SalesAmount])
+VAR TotalCosts = SUM (Sales[TotalProductCost])
+VAR GrossMargin = TotalSales - TotalCosts
+RETURN
+   GrossMargin / TotalSales
+// Variables are evaluated lazily and just once
+// Strange results for arithmetic
+10 / 0 // Infinity
+7 / 0 // Infinity
+0 / 0 // NaN
+(10 / 0) / (7 / 0) // Infinity
+999 / (7/0) // 0
+SQRT(-1) // Returns error
+10 * Sales[Amount] // if any cell is BLANK, Blank is returned for that row
+IF (
+   Sales[DiscountPerc] = 0,
+   BLANK (),
+   Sales[DiscountPerc] * Sales[Amount]
+)
