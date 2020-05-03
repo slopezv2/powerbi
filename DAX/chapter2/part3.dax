@@ -2,3 +2,45 @@
 FLOOR(Test[Value], 0.01)
 TRUNC(Test[Value], 2)
 // Text functions
+People[Comma1] = IFERROR ( FIND(",", People[Name]), BLANK())
+People[Comma2] = IFERROR (FIND (" ,", People[Name], People[Comma1]+1), BLANK())
+People[SimpleConversion] = 
+MID (People[Name], People[Comma2] + 1, LEN(People[Name]))
+    & " "
+    & LEFT ( People[Name], People[Comma1] - 1 )
+People[FirstName] = 
+TRIM (
+    MID (
+        People[Name],
+        IF ( ISNUMBER (People[Comma2]), People[Comma2], People[Comma1]) + 1,
+        LEN (People[Name])
+    )
+)
+    & IF (
+        ISNUMBER (People[Comma1]),
+        " " & LEFT (People[Name], People[Comma1] -1),
+        ""
+    )
+// Format dates
+= FORMAT ( DATE ( 2020, 01, 12), "yyyy mm dd" )
+= DATEVALUE ("2015/01/12")
+// Date functions
+EDATE, EOMONTH, HOUR, MINUTE, MONTH, NOW, SECOND, TIME, TIMEVALUE, TODAY, WEEKDAY, WEEKNUM, YEAR, YEARFRAC
+'Date'[Day] = DAY( Calendar[Date])
+'Date'[Month] = FORMAT (Calendar[Date], "mmmm") // means as January or February, etc.
+'Date'[Year] = YEAR ( Calendar[Date])
+
+// Relational functions
+Sales[AdjustedCost] = 
+IF (
+    RELATED ( 'Product Category'[Category]) ="Cell Phone",
+    Sales[Unit Cost] * 0.95,
+    Sales[Unit Cost]
+) // This is valid only from the many to one side, in the other case we require RELATEDTABLE
+'Product Category'[NumOfProducts] = COUNTROWS ( RELATEDTABLE ( Product))
+// Iterators can be used with relatedtable}
+'Product Category'[CategorySales] =
+SUMX (
+    RELATEDTABLE (Sales),
+    Sales [Quantity] * Sales[NetPrice]
+)
