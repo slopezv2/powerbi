@@ -1,0 +1,50 @@
+BestCategories =
+VAR SubCategories =
+    ALL ( 'Product'[Category], 'Product'[Subcategory])
+VAR AverageSales =
+    AVERAGEX (
+        SubCategories,
+        SUMX ( RELATEDTABLE (Sales), Sales[Quantity] * Sales[Net Price])
+    )
+VAR TopCategories =
+    FILTER (
+        SubCategories,
+        VAR SalesOfCategory = 
+            SUMX ( RELATEDTABLE(Sales), Sales[Quantity] * Sales[Net Price])
+        RETURN 
+            SalesOfCategory >= AverageSales * 2
+    )
+RETURN
+    TopCategories
+// ALL and VALUES dif: VALUES only returns the visible values (affected by filters)
+// Distinc vs values: Does not consider the blank row added automatically  in the one side relationship to be related to the other many side rows.
+//ALLNOBLANKROW erase the clean blank row added in the one side relationship
+//Behavior with tables: Distinct returns the distinct values of the table, not considering the blank row.
+// VALUES returns all the rows of the table, without removing duplicaties, plus the additional blank row
+// Values can be used as measure if you can return only one item
+Brand Name :=
+IF (
+    COUNTROWS ( VALUES (Product[Brand])) =1,
+    VALUES(Product[Brand])
+)
+// Same behaviour with HASONEVALUE
+Brand Name :=
+IF (
+    HASONEVALUE ('Product'[Brand]),
+    VALUES ('Product'[Brand])
+)
+// Using selected Value
+Brand Name := SELECTEDVALUE ('Product'[Brand], "Multiple Brands detected")
+// Concat the brand names
+[Brand Name] :=
+CONCATENATEX (
+    VALUES ( 'Product'[Brand]),
+    'Product'[Brand],
+    ", "
+)
+//ALLSELECTED: Useful when retrieving the list of values of a table, column, as visible in the current report and considering all and only the filters outside of the current visual
+Sales Pct :=
+DIVIDE (
+    SUMX ( Sales, Sales[Quantity] * Sales[Net Price]),
+    SUMX ( ALLSELECTED (Sales), Sales[Quantity] * Sales[Net Price])
+)

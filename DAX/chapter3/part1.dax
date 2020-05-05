@@ -1,0 +1,90 @@
+// Table functions
+// using a var for table
+Sales Amount Multiple Items := 
+VAR
+    MultipleItemSales = FILTER (Sales, Sales[Quantity] > 1)
+RETURN
+    SUMX (
+        MultipleItemSales,
+        Sales[Quantity] * Sales[Unit Price]
+    )
+// Other example with related table
+'Product'[Product Sales Amount] =
+SUMX (
+    RELATEDTABLE(Sales),
+    Sales[Quantity] * Sales[Unit Price]
+)
+// Dax evaluates the the innermost functions first
+'Product'[Product Sales Amount Multiple Items] =
+SUMX(
+    FILTER (
+        RELATEDTABLE (Sales),
+        Sales[Quantity] > 1
+    ),
+    Sales[Quantity] * Sales[Unit Price]
+)
+// Calculated table
+ExpensiveProducts =
+FILTER (
+    'Product',
+    'Product'[Unit Price] > 3000
+)
+// EVALUATE is used to evaluate against a table
+EVALUATE
+FILTER (
+    'Product',
+    'Product'[Unit Price] > 3000
+)
+ORDER BY
+    'Product'[Color],
+    'Product'['Brand'] ASC,
+    'Product'[Class] DESC
+// Example using filter
+RedSales :=
+SUMX (
+    FILTER (
+        'Sales',
+        RELATED ('Product'[Color]) == "Red"
+    ),
+    Sales[Quantity] * Sales[Net Price]
+)
+// Using AND for nesting
+FabrikamHighMarginProducts =
+FILTER (
+    FILTER (
+        'Product',
+        'Product'[Brand] = "Fabrikam"
+    ),
+    'Product'[Unit Price] > 'Product'[Unit Cost] * 3
+)
+//Second version
+FabrikamHighMarginProducts =
+FILTER (
+    'Product',
+    AND (
+        'Product'[Brand] = "Frabikam",
+        'Product'[Unit Price] > 'Product'[Unit Cost] * 3
+    )
+)
+// Best practice: the innermost should be the most selective filter.
+NumOfRedProducts :=
+COUNTROWS (
+    FILTER ( 'Product', 'Product'[Color] = "Red")
+)
+// Using ALL and ALLEXCEPT
+//first example, returning all the rows
+ProductCopy = ALL ('Product') // Useful to ignore filters
+All Sales Amount :=
+SUMX(
+    ALL (Sales),
+    Sales [Quantity] * Sales[Net Price]
+)
+// ALL in column context returns all the distinct values of the column in the entire table
+Categories = ALL ( 'Product'[Category])
+// If we specify multiple columns, ALL Returns all the existing combinations of values in those columns
+Categories =
+ALL (
+    'Product'[Category],
+    'Product'[SubCategory]
+)
+// ALLEXCEPT returns a table with unique list of existing combinations of values in the other columns of the table
