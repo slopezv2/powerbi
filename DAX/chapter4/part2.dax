@@ -1,0 +1,21 @@
+// Iteration and aggregation
+Product[NumberOfSales] = 
+VAR SalesOfCurrentProduct = RELATEDTABLE (Sales)
+RETURN
+    COUNTROWS (SalesOfCurrentProduct)
+// Copy the category name in a calculated column
+'Product'[Category] = RELATED ('Product Category'[Category])
+//Behaviour in a one-to-one relationship: RELATED and RELATEDTABLE works. RELATED returns a row, RELATEDTABLE returns a table with a single row.
+// one to many, brigde table and them many to one, only works RELATEDTABLE using bidirectional filter propagation
+Correct Average :=
+VAR CustomerAge =
+    SUMMARIZE (
+        Sales,
+        Sales[CustomerKey],
+        Sales[Customer Age]
+    )
+RETURN
+AVERAGEX (
+    CustomerAge,
+    Sales[Customer Age]
+)

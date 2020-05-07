@@ -1,0 +1,87 @@
+// Evaluation context
+/*
+There are 2 evaluation contexts: the filter context and the row context
+*/
+// Row Context
+Sales[Gross Margin] = Sales[Quantity] * ( Sales[Net] - Sales[Unit Cost])
+// Iterators behaviour:
+// 1. Evaluate the first parameter in the existing contexts to determine the rows to scan.
+// 2. Create a new row context for each row of the table evaluated in the previous step-
+// 3. iterate the table and evaluate the second parameter in the existing evaluation context, including the newly created row context.
+// 4. Aggregate the values computed during the previous step.
+// Multiple row contexts
+SUMX (
+    'Product Category',
+    SUMX (
+        RELATEDTABLE ('Product'),
+        SUMX (
+            RELATEDTABLE ( Sales ),
+            Sales[Quantity]
+                * 'Product'[Unit Price]
+                * 'Product Category'[Discount]
+        )
+    )
+)
+// More readable and efficient way:
+SUMX (
+    Sales,
+    Sales[Quantity] 
+        * RELATED ('Product'[Unit Price])
+        * RELATED ('Product Category'[Discount])
+)
+// Example: Ranking using nested row contexts
+'Product'[UnitPriceRank] =
+COUNTROWS (
+    FILTER (
+        'Product',
+        'Product'[Unit Price] > PriceOfCurrentProduct
+    )
+) + 1
+// Defininf PriceOfCurrentProduct
+'Product'[UnitPriceRank] =
+VAR 
+    PriceOfCurrentProduct = 'Product'[Unit Price]
+VAR 
+    MoreExpensiveProducts =
+    FILTER (
+        'Product',
+        'Product'[Unit Price] > PriceOfCurrentProduct
+    )
+RETURN
+    COUNTROWS (MoreExpensiveProducts) + 1
+//Rank dense
+'Product'[UnitPriceRankDense] =
+VAR PriceOfCurrentProduct = 'Product'[Unit Price]
+VAR HigherPrices =
+    FILTER (
+        VALUES( 'Product'[Unit Price]),
+        'Product'[Unit Price] > PriceOfCurrentProduct
+    )
+RETURN
+    COUNTROWS (HigherPrices) + 1
+// EARLIER: access to the outer row contexts. Retrieves the value of a column by using the previous row context instead of the last one
+'Product'[UnitPriceRankDense] =
+COUNTROWS (
+    FILTER (
+        VALUES ('Product'[Unit Price]),
+        'Product'[UnitPrice] > EARLIER ('Product'[UnitPrice])
+    )
+) + 1
+// Count red products
+NumOfRedProducts :=
+VAR RedProducts =
+    FILTER(
+        'Product',
+        'Product'[Color] = "Red"
+    )
+RETURN
+    COUNTROWS(RedProducts)
+// Ignoring filter context:
+NumOfAllRedProducts :=
+VAR AllRedProducts =
+    FILTER (
+        ALL ('Product'),
+        'Product'[Color] = "Red"
+    )
+RETURN
+    COUNTROWS (AllRedProducts)

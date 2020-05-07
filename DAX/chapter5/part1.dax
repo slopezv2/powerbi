@@ -1,0 +1,86 @@
+// Calculate and CALCULATETABLE are the only functions in DAX that can create new filter contexts
+// CALCULATE (Expression, Condition1,...,ConditionN)
+// Creates a new filter context based on the set of filter arguments
+Sales Amount := SUMX (Sales, Sales[Quantity] * Sales[Net Price])
+Gross Margin := SUMX (Sales, Sales[Quantity] * (Sales[Net Price]- Sales[Unit Cost]))
+Contoso GM :=
+CALCULATE (
+    [Gross Margin],
+    'Product'[Brand] = "Contoso"
+)
+Contoso GM % :=
+CALCULATE (
+    [GM %],
+    'Product'[Brand] = "Contoso"
+)
+// It creates a new filter context by merging its filter arguments with the existing filter context.
+// filter arguments are not boolean conditions: filter arguments are tables
+Contoso GM :=
+CALCULATE (
+    [Gross Margin],
+    FILTER (
+        ALL ('Produc'[Brand]),
+        'Product'[Brand] = "Contoso"
+    )
+)
+// if 2 or more filter arguments affect the same column, they are merged together using an AND operator or using the set intersection in mathematical terms
+// In the end, CALCULATE restores the original filter context
+// Calculate accepts list of values and Boolean conditions (single column)
+Sales Pct :=
+VAR CurrentCategorySales =
+    [Sales Amount]
+VAR AllCategorySales =
+    CALCULATE (
+        [Sales Amount],
+        ALL ('Product'[Category])
+    )
+VAR Ratio =
+    DIVIDE (
+        CurrentCategorySales,
+        AllCategorySales
+    )
+RETURN
+    Ratio
+// Solving the other columns as filter problem
+Pct All Sales := 
+VAR CurrentCategorySales =
+    [Sales Amount]
+VAR AllSales =
+    CALCULATE (
+        [Sales Amount],
+        ALL (Sales)
+    )
+VAR Ratio = 
+    DIVIDE (
+        CurrentCategorySales,
+        AllSales
+    )
+RETURN
+    Ratio
+// KEEPFILTERS
+Audio Sales KeepFilters :=
+CALCULATE (
+    [Sales Amount],
+    KEEPFILTERS ('Product'[Category] = "Audio")
+)
+// Only the cells where the filtered category was already included in the filter context will produce a visible result.
+Always Audio-Computers :=
+CALCULATE (
+    [Sales Amount],
+    'Product'[Category] IN {"Audio", "Computers"}
+)
+KeepFilters AudioComputers := 
+CALCULATE (
+    [Sales Amount],
+    KEEPFILTERS('Product'[Category] IN {"Audio", "Computers"})
+)
+KeepFilters Audio-Computers :=
+CALCULATE (
+    [Sales Amount],
+    KEEPFILTERS (
+        FILTER (
+            ALL ('Product'[Category]),
+            'Product'[Category] IN { "Audio". "Computers"}
+        )
+    )
+)

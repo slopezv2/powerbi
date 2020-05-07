@@ -1,0 +1,41 @@
+// Filtering a single column
+// Next example is valid because use the same column
+Sales 10-100 :=
+CALCULATE (
+    [Sales Amount],
+    Sales[Net Price] >= 10 && Sales[Net Price] <= 100
+)
+Sales Blue + Red :=
+CALCULATE (
+    [Sales Amount],
+    'Product'[Color] = "Red" || 'Product'[Color] = "Blue"
+)
+// Multiple column filtering, creating a table
+Sales Large Amount :=
+CALCULATE (
+    [Sales Amount],
+    FILTER (
+        ALL ( Sales[Quantity], Sales[Net Price]),
+        Sales[Quantity] * Sales[Net Price] >= 1000
+    )
+)
+//Avoid overwriting existing filters
+Sales Large Amount KeepFilter :=
+CALCULATE (
+    [Sales Amount],
+    KEEPFILTERS (
+        FILTER (
+            ALL (Sales[Quantity], Sales[Net Price]),
+            Sales[Quantity] * Sales[Net Price] >= 1000
+        )
+    )
+)
+// Not recommended:
+Sales Large Amount Table :=
+CALCULATE (
+    [Sales Amount],
+    FILTER (
+        Sales,
+        Sales[Quantity] * Sales[Net Price] >= 1000
+    )
+)
