@@ -39,3 +39,49 @@ CALCULATE (
         Sales[Quantity] * Sales[Net Price] >= 1000
     )
 )
+// Calculate invalidates any row context. It automatically adds as filter arguments all the columns that are currently being iterated in any row context 
+// - filtering their actual value in the row being iterated
+// Example of invalidation
+Sales Amount :=
+SUMX (
+    Sales,
+    CALCULATE (Sales[Quantity]) -- No row Context inside CALCULATE, error
+)
+// Context transition uses columns that are not present in the formula
+// Context transition does not only filter one row
+// Context transition is expensive
+// Context transition creates a filter context out of row context
+// Context transition is invoked whenever there is a row contexts
+// Context transition transform all the row contexts
+// the outer row contexts are transformed into equivalent filter contexts
+// Context transition in calculated columns
+'Product'[Performance] =
+VAR TotalSales =
+    SUMX ( -- over all the table
+        Sales,
+        Sales[Quantity] * Sales[Net Price]
+    )
+VAR CurrentSales =
+    CALCULATE ( --Context transition
+        SUMX (
+            Sales, -- Current product only
+            Sales[Quantity] * Sales[Net Price]
+        )
+    )
+VAR Ratio = 0.01
+VAR Result =
+    IF (
+        CurrentSales >= TotalSales * Ration,
+        "Hight Performance product",
+        "Regular Product"
+    )
+RETURN
+    Result
+// Context transition is not good in all the cases
+Sales[Wrong Amt] =
+CALCULATE (
+    SUMX (
+        Sales,
+        Sales[Quantity] * Sales[Net Price]
+    )
+)

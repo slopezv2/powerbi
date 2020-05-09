@@ -1,0 +1,70 @@
+// Every measure reference always has an implicit CALCULATE surrounding it
+Max Daily Sales :=
+MAXX (
+    'Date',
+    [Sales Amount]
+)
+//which it is translated to:
+Max Daily Sales :=
+MAXX (
+    'Date',
+    CALCULATE (
+        SUMX (
+            Sales,
+            Sales[Quantity] * Sales[Net Price]
+        )
+    )
+)
+// Circular dependencies
+// Calculate can easily lead to circular depen. because it requires all the coloumns of a table, so 2 Calculate for columns may lead to a circular dependency
+Sales[AllSalesQty] = CALCULATE ( SUM (Sales[Quantity]))
+Sales[NewAllSalesQty] = CALCULATE (SUM ( Sales[Quantity]))
+// Circular dependency
+// Avoid using CALCULATE  and context transition whenever the uniqueness of rows is not guaranteed
+//USERELATIONSHIP
+Delivered Amount :=
+CALCULATE (
+    [Sales Amount],
+    USERELATIONSHIP ( Sales[Delivery Date], 'Date'[Date])
+)
+Delivered Amount 2007 v3 :=
+CALCULATE (
+    [Sales Amount],
+    'Date'[Calendar Year] = "CY 2007",
+    USERELATIONSHIP (
+        Sales[Delivery Date],
+        'Date'[Date]
+    )
+)
+// When you use USERELATIONSHIP in a CALCULATE statement, all the filter arguments are evaluated using the relationship modifiers that appear in the same CALCULATE statement.
+//CROSSFILTER: 
+// It can change the crossfilter direction of a relationship
+// It can disable a relationship
+NumOfColors :=
+CALCULATE (
+    DISTINCTCOUNT ('PROduct'[Color]),
+    CROSSFILTER ( Sales[ProductKey], 'Product'[ProductKey], BOTH)
+)
+// Keepfilters:
+ColorBrandSales :=
+SUMX (
+    KEEPFILTERS ( ALL ('Product'[Color]), 'Product'[Brand]),
+    [Sales Amount]
+)
+// the row context becomes a filter context by adding a filter argument for Color and Brand
+// ALL and CALCULATE
+All years Sales :=
+CALCULATE (
+    [Sales Amount],
+    ALL ('Date'[Year])
+)
+// ALL removes an existing filter instead of creating a new one
+// ALLSELECTED in CALCULATE: Restore  the filter context that was active outside of the current visual
+SalesPct :=
+DIVIDE (
+    [Sales],
+    CALCULATE (
+        [Sales],
+        ALLSELECTED()
+    )
+)
