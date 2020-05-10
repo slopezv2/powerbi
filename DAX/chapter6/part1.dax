@@ -1,0 +1,85 @@
+// Variables
+Margin% := 
+VAR SalesAmount =
+    SUMX ( Sales, Sales[Quantity] * Sales[Net Price])
+VAR TotalCost =
+    SUMX (Sales, Sales[Quantity] * Sales[Unit Cost])
+VAR Margin =
+    SalesAmount - TotalCost
+VAR MarginPerc =
+    DIVIDE ( Margin, TotalCost)
+RETURN
+    MarginPerc
+// Dax guarantees only once evaluation for those variables
+// Variables are assigned once, then it cannot be changed, in fact they are constants 
+% of Product :=
+VAR SalesAmount = SUMX ( Sales, Sales[Quantity] * Sales[Net Price])
+RETURN
+    DIVIDE (
+        SalesAmount,
+        CALCULATE (
+            SalesAmount,
+            ALL ('Product')
+        )
+    )
+// Always return the same value, the first calculated, correct solution: Use measures
+Sales Amount :=
+SUMX ( Sales, Sales[Quantity] * Sales[Net Price] )
+
+% of Product :=
+DIVIDE (
+    [Sales Amount],
+    CALCULATE (
+        [Sales Amount],
+        ALL ('Product')
+    )
+)
+// Variable scoping
+Amount at Current Price :=
+SUMX (
+    'Product',
+    VAR CurrentPrice = Sales[Quantity] * Sales[Net Price]
+    RETURN (
+        SUMX (
+            RELATEDTABLE(Sales),
+            VAR Quantity = Sales[Quantity]
+            VAR AmountAtCurrentPrice = Quantity * CurrentPrice
+            RETURN 
+                AmountAtCurrentPrice
+        )
+    )
+)
+// Table variables
+Amount := 
+IF (
+    HASONEVALUE ( Slicer[Factor]),
+    VAR 
+        Factor = Values (Slicer[Factor])
+    RETURN
+        DIVIDE (
+            [Sales Amount],
+            Factor
+        )
+)
+//Variables to iterate a table
+Filtered Amount :=
+VAR
+    MultiSales = FILTER ( Sales, Sales[Quantity] > 1)
+RETURN
+    SUMX(
+        MultiSales,
+        Sales[Quantity] * Sales[Net Price]
+    )
+// Lazy evaluation
+Sales Amount :=
+VAR SalesAmount = 
+    SUMX (Sales, Sales[Quantity] * Sales[Net Price])
+VAR DummyError =
+    ERROR( "This error will never be displayed")
+RETURN
+    SalesAmount
+// Dax optimizer
+SalesAmount := SUMX ( Sales, Sales[Quantity] * Sales[Net Price])
+TotalCost := SUMX (Sales, Sales[Quantity] * Sales[Unit Price])
+Margin := [SalesAmount] - [TotalCost]
+Margin% := DIVIDE ( [Margin], [TotalCost])

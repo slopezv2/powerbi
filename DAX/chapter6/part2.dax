@@ -1,0 +1,40 @@
+Sales Large Customers := 
+VAR LargeCustomers =
+    FILTER (
+        Customer,
+        [Sales Amount] > 10000
+    )
+VAR WorkingDaysIn2008 =
+    CALCULATETABLE (
+        ALL ('Date'[IsWorkingDay], 'Date'['Calendar Year']),
+        'Date'[IsWorkingDay] = True (),
+        'Date'[Calendar Year] = "CY 2008"
+    )
+RETURN
+    CALCULATE (
+        [Sales Amount],
+        LargeCustomers,
+        WorkingDaysIn2008
+    )
+// Use to avoid EARLIER
+'Product'[RankPrice] =
+VAR CurrentProductPrice = 'Product'[Unit Price]
+VAR MoreExpensiveProducts =
+    FILTER (
+        'Product',
+        'Product'[Unit Price] > CurrentProductPrice
+    )
+RETURN
+    COUNTROWS (MoreExpensiveProducts) + 1
+// Customers who bought more than the average customer
+AverageSalesPerCustomer :=
+AVERAGEX ( Customer, [Sales Amount] )
+CustomersBuyingMoreThanAverage :=
+VAR AverageSales = [AverageSalesPerCustomer]
+RETURN
+    COUNTROWS (
+        FILTER (
+            Customer,
+            [Sales Amount] > CustomersBuyingMoreThanAverage
+        )
+    )
