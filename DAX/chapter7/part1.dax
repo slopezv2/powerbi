@@ -1,0 +1,83 @@
+Sales at List Price 2:=
+SUMX (
+    Sales,
+    RELATED ( 'Product'[Unit Price]) * Sales[Quantity]
+)
+// Nested iterators
+Sales Amount :=
+SUMX (
+    Sales,
+    Sales[Quantity] * Sales[Net Price]
+)
+Max Daily Sales 2 :=
+MAXX (
+    'Date',
+    [Sales Amount]
+)
+//iterators and context transition
+Date of Max =
+VAR MaxDailySales = [Max Daily Sales]
+VAR DatesWithMax =
+    FILTER (
+        VALUES ( 'Date'[Date] ),
+        [Sales Amount] = MaxDailySales
+    )
+VAR Result =
+    IF ( 
+        COUNTROWS ( DatesWithMax) = 1,
+        DatesWithMax,
+        BLANK ()
+    )
+RETURN
+    Result
+// Other example
+Avg Sales by Customer :=
+AVERAGEX ( Customer, [Sales Amount])
+// Using concatenatex
+Selected Colors :=
+"Showing" &
+CONCATENATEX (
+    VALUES ( 'Product'[Color]),
+    'Product'[Color],
+    ", ",
+    'Product'[Color],
+    ASC
+) & " colors."
+// Completed example
+Selected Colors :=
+VAR Colors =
+    VALUES ( 'Product'[Color] )
+VAR NumOfColors =
+    COUNTROWS ( Colors)
+VAR NumOfAllColors =
+    COUNTROWS (
+        ALL ( 'Product'[Color])
+    )
+VAR AllColorsSelected = NumOfColors  = NumOfAllColors
+VAR SelectedColors =
+    CONCATENATEX (
+        Colors,
+        'Product'[Color],
+        ", ",
+        'Product'[Color], ASC
+    )
+VAR Result =
+    IF (
+        AllColorsSelected,
+        "Showing all colors.",
+        IF (
+            NumOfColors > 5,
+            "More than 5 colors selected, see slicer page for details.",
+            "Showing " & SelectedColors & " colors."
+        )
+    )
+RETURN 
+    Result
+// Iterators returning tables
+Colors =
+ADDCOLUMNS ( // Add columns to the table expression passed as first param
+    VALUES ('Product'[Color]),
+    "Color", 'Product'[Color],
+    "Products", CALCULATE ( COUNTROWS ('Product')),
+    "Sales Amount", [Sales Amount]
+)
