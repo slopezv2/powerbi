@@ -61,3 +61,28 @@ CALCULATE (
 RETURN 
     Result
 // Using RANKX
+Rank Cat on Sales :=
+RANKX (
+    ALL ('Product'[Category]),
+    [Sales Amount]
+)
+// Rankx steps:
+//1. Builds a lookup 
+//table by iterating over the table provided as the first parameter.
+// During the iteration it evaluated its second parameter in the row context of
+// the iteration. At the end it sorts the lookup table.
+// Other example
+Rounded Sales := MROUND ([Sales Amount], 1000000)
+Rank On Rounded Sales :=
+RANKX (
+    ALL ( 'Product'[Brand]),
+    [Rounded Sales]
+)
+Rank On Rounded Sales Dense :=
+RANKX (
+    ALL ( 'Product'[Brand]),
+    [Rounded Sales],
+    ,
+    ,
+    DENSE
+)

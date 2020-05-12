@@ -1,0 +1,17 @@
+// Sales avoiding months with no sales
+SalesPerWrokingDay :=
+VAR WorkingDays =
+    SUMX (
+        VALUES ('Date'[Month]),
+        IF (
+            [Sales Amount] > 0,
+            [NumOfWorkingDays]
+        )
+    )
+VAR Result =
+    DIVIDE (
+        [Sales Amount],
+        WorkingDays
+    )
+RETURN
+    Result
