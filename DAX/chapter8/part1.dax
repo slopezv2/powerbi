@@ -1,0 +1,29 @@
+// Time intelligence
+// Create a Date table
+Date =
+CALENDAR (
+    DATE (YEAR (MIN(SALES[Order Date])),1,1),
+    DATE (YEAR (MAX(SALES[Order Date])),12,31),
+)
+// Date table for fiscal years starting on July 1 and ending on June 30:
+Date = CALENDARAUTO(6)
+// Generating a completed date table:
+Date =
+VAR MinYear = YEAR ( MIN ( Sales[Order Date] ) )
+VAR MAXYEAR = YEAR ( MAX ( Sales[Order Date] ) )
+RETURN
+ADDCOLUMNS (
+    FILTER (
+        CALENDARAUTO (),
+        YEAR ( [Date] ) >= MinYear &&
+        YEAR ( [Date] ) <= MAXYEAR
+    ),
+    "Year", YEAR ( [Date]),
+    "Quarter Number", INT ( FORMAT ([DATE], "q" ) ),
+    "Quarter", "Q" & INT ( FORMAT ([DATE], "q" ) ),
+    "Month Number", MONTH ([Date]),
+    "Month", FORMAT ( [Date], "mmmm"),
+    "Week Day Number", WEEKDAY ( [Date]),
+    "Week Day", FORMAT ([Date], "dddd"),
+    "YEAR Month Number", YEAR( [Date] ) * 100 + MONTH ( [Date])
+)
