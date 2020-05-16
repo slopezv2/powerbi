@@ -1,0 +1,93 @@
+// Using LASTDATE means you can expect empty values whenever there ir no value on the exact last day of the month.
+Last Value :=
+CALCULATE (
+    AVERAGE (MSFT[Value]),
+    LASTNONBLANK (
+        'Date'[Date],
+        COUNTROWS ( RELATEDTABLE (MSFT))
+    )
+)
+SOQ :=
+VAR FirstDateInQuarter =
+    CALCULATETABLE (
+        FIRSTNONBLANK (
+            'Date'[Date],
+            COUNTROWS ( RELATEDTABLE (MSFT))
+        ),
+        PARALLELPERIOD (
+            'Date',
+            0,
+            QUARTER
+        )
+    )
+VAR Result = 
+    CALCULATE (
+        AVERAGE ( MSFT[Value]),
+        FirstDateInQuarter
+    )
+RETURN 
+    Result
+// Month-to-date
+// DATESMRD ('Date'[Date]) corresponds to the following code:
+CALCULATETABLE (
+    VAR LastDateInSelection = MAX ('Date'[Date])
+    RETURN
+        FILTER (
+            ALL ('Date'[Date]),
+            'Date'[Date] <= LastDateInSelection
+            && YEAR ('Date'[Date]) = YEAR (LastDateInSelection)
+            && MONTH ('DATE'[Date]) = MONTH (LastDateInSelection)
+        )
+)
+DATESYTD ( CALCULATETABLE (DISTINCT ( 'Date'[Date]))) -- Corresponds to
+VAR LastDateInSelection =
+    MAXX ( CALCULATETABLE (DISTINCT ('Date'[Date])))
+RETURN
+    FILTER (
+        ALL ('Date'[Date])
+        'Date'[Date] <= LastDateInSelection
+        && YEAR ( 'Date'[Date]) = YEAR (LastDateInSelection)
+    )
+VAR CurrentDate = 'Date'[Date]
+RETURN 
+    FILTER (
+        ALL ( 'Date'[Date]),
+        'Date'[Date] <= CurrentDate
+            && YEAR ( 'Date'[Date]) = YEAR (CurrentDate)
+    )
+    //TREATAS: Applies a table expression to the filter context on the columns specified by the second and following arguments
+    // DaTEADD near implementation:
+    DATEADD ( 'Date'[Date], -1, MONTH) -- implementation
+    VAR OffsetMonth = -1
+    RETURN TREATAS (
+        SELECTCOLUMNS (
+            CALCULATETABLE (DISTINCT ('Date'[Date])),
+            "Date", DATE (
+                YEAR ('Date'[Date]),
+                MONTH ('Date'[Month] + OffsetMonth),
+                DAY ( 'Date'[Date])
+            )
+        ),
+        'Date'[Date]
+    )
+// Sales by weekday
+Date[YearMonthNumber] =
+'Date'[Year] * 12 + 'Date'[Month Number] - 1
+PM Sales WeekDay :=
+VAR CurrentMonths = DISTINCT ( 'Date'[YearMonthNumber] )
+VAR PreviousMonths =
+    TREATAS (
+        SELECTCOLUMNS (
+            CurrentMonths,
+            "YearMonthNumber", 'Date'[YearMonthNumber] - 1
+        ),
+        'Date'[YearMonthNumber]
+    )
+VAR Result =
+    CALCULATE (
+        [Sales Amount],
+        ALLEXCEPT ('Date', 'Date'[Week Day]),
+        PreviousMonths
+    )
+Return
+    Result

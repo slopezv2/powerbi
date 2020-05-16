@@ -48,3 +48,48 @@ CALCULATE (
         YEAR
     )
 )
+// Last balance by using LASTDATE to overwrite the filter context on Date:
+LastBalance :=
+CALCULATE (
+    SUM ( Balances[Balance] ),
+    LASTDATE ( 'Date'[Date] )
+)
+// LASTNONBLANK is an iterator that scans a table and returns the last value of the table for which the second parameter does not evaluate to BLANK
+LastBalanceNonBlank :=
+CALCULATE (
+    SUM (
+        LASTNONBLANK (
+            'Date'[Date],
+            COUNTROWS ( RELATEDTABLE (Balances))
+        )
+    )
+)
+// Correct version of the 2 previous examples:
+LastBalanceAllCustomers :=
+VAR LastDateAllCustomers =+
+    CALCULATETABLE (
+        LASTNONBLANK (
+            'Date'[Date],
+            COUNTROWS (RELATEDTABLE (Balances))
+        ),
+        ALL ( Balances[Balance])
+    )
+VAR Result =
+    CALCULATE (
+        SUM ( Balances[Balance] ),
+        LastDateAllCustomers
+    )
+RETURN
+    Result
+// Second version using nested iterators
+LastBalanceIndividualCustomer :=
+SUMX (
+    VALUES ( Balances[Name]),
+    CALCULATE (
+        SUM ( Balances[Balance]),
+        LASTNONBLANK (
+            'Date'[Date],
+            COUNTROWS ( RELATEDTABLE (Balances))
+        )
+    )
+)

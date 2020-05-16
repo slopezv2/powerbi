@@ -1,0 +1,27 @@
+// Choose a measure based on current filter
+PM Sales :=
+IF (
+    ISFILTERED ( 'Date'[Day of Week]),
+    [PM Sales Week Day],
+    [PM Sales DatAdd]
+)
+// Translation for LASTDATE
+CALCULATE (
+    SUM ( Inventory[Quantity]),
+    LASTDATE ('Date'[Date])
+)
+//Using MAX:
+CALCULATE (
+    SUM (Inventory[Quantity]),
+    FILTER (
+        ALL ('Date'[Date]),
+        'Date'[Date] = MAX ('Date'[Date])
+    )
+)
+// When to prever Max over LASTDate = when you want to avoid context transition
+FILTER (
+    ALL ('Date'[Date]),
+    'Date'[Date] <= MAX ('Date'[Date])
+)
+-- LASTNONBLANK and FIRSTNONBLANK are iterators
+LASTNONBLANK ('Date'[Date], CALCULATE (COUNTROWS(Inventory)))
