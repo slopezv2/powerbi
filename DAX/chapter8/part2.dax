@@ -1,0 +1,50 @@
+PY YTD Sales :=
+CALCULATE (
+    [Sales Amount],
+    DATESYTD ( SAMEPERIODLASTYEAR ('Date'[Date]))
+)
+YOY YTD Sales :=
+VAR CyYtdSales = [YTD Sales]
+VAR PyYtdSales = [PY YTD Sales]
+VAR YoyYtdSales =
+    IF (
+        NOT ISBLANK (CyYtdSales) && NOT ISBLANK (PyYtdSales),
+        CyYtdSales - PyYtdSales
+    )
+RETURN
+    YoyYtdSales
+// LASTDATE is like MAX but returns a table. 
+MAT Sales :=
+CALCULATE (
+    [Sales Amount],
+    DATESINPERIOD (
+        'Date'[Date],
+        MAX ( 'Date'[Date]),
+        -1,
+        YEAR
+    )
+)
+// second version for MAT Sales
+MAT Sales v2 :=
+CALCULATE (
+    [Sales Amount],
+    DATESBETWEEN (
+        'Date'[Date],
+        NEXTDAY ( SAMEPERIODLASTYEAR (LASTDATE('Date'[Date]))),
+        LASTDATE ('Date'[Date])
+    )
+)
+// DATESBETWEEN works at day level
+MAA Sales :=
+CALCULATE (
+    DIVIDE (
+        [Sales Amount],
+        DISTINCTCOUNT('Date'[Date])
+    ),
+    DATESINPERIOD (
+        'Date'[Date],
+        MAX ( 'Date'[Date]),
+        -1, 
+        YEAR
+    )
+)

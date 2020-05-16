@@ -27,3 +27,60 @@ ADDCOLUMNS (
     "Week Day", FORMAT ([Date], "dddd"),
     "YEAR Month Number", YEAR( [Date] ) * 100 + MONTH ( [Date])
 )
+//Year to Date = YTD
+Sales Amount YTD :=
+VAR LastVisibleDate = MAX ( 'Date'[Date] )
+VAR CurrentYear = YEAR ( LastVisibleDate )
+VAR SetOfDatesYtd = 
+    FILTER (
+        ALL ( 'Date' ),
+        AND (
+            'Date'[Date] <= LastVisibleDate
+            'Date'[Date] = DATE CurrentYear
+        )
+    )
+VAR Result =
+    CALCULATE (
+        SUMX (Sales, Sales[Net Price] * Sales[Quantity]),
+        SetOfDatesYtd
+    )
+Sales Amount
+// Time intelligence version
+Sales Amount YTD :=
+CALCULATE (
+    SUMX (Sales, Sales[Net Price] * Sales[Quantity]),
+    DATESYTD ('Date'[Date])
+)
+/* DATESYTD is a functions that returns a table with all dates from thre beggining
+of the year until the last date included in the current filter context
+*/
+//TOTALYTD function to hide the calculate op. the first param is the aggregation
+// the second is the date field to use
+YTD Sales :=
+TOTALYTD (
+    [Sales Amount],
+    'Date'[Date]
+)
+//Specifying the end of fiscal year
+Fiscal YTD Sales := TOTALYTD ([Sales Amount], 'Date'[Date], "06-30")
+// Prior periods
+PY Sales := CALCULATE ( [Sales Amount], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+//Equivalent using DATEADD
+PY Sales := CALCULATE ( [Sales Amount], DATEADD ('Date'[Date], -1, YEAR))
+// Parallel Period: returns the full period specified in the third parameter
+// instead of the partial period returned by DATEADD.
+PY Total Sales :=
+CALCULATE ([Sales Amount], PARALLELPERIOD ('Date'[Date], -1, YEAR))
+//PREVIOUSMONTH only returns the specific period time specified
+// Equivalences
+PY Sales := 
+CALCULATE (
+    [Sales Amount],
+    DATESYTD ( 'Date'[Date])
+)
+-- is equivalent to
+PY Sales :=
+CALCULATE (
+    [Sales Amount],
+    DATESYTD ( CALCULATETABLE (DISTINCT ('Date'[Date])))
+)
