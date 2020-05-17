@@ -1,0 +1,85 @@
+// Checking filters
+QTD Sales :=
+IF (
+    HASONEVALUE ( 'Date'[Month]),
+    CALCULATE (
+        [Sales Amount],
+        DATESQTD ('Date'[Date])
+    )
+)
+//Selected value
+User Selected Inflation := SELECTEDVALUE ('Ingflation Rate'[Inflation],0)
+Inflation Multiplier :=
+VAR ReportingYear =
+    YEAR ( CALCULATE ( MAX ( Sales[Order Date]), ALL ( Sales ) ) )
+VAR CurrentYear =
+    SELECTEDVALUE ('Date'[Calendar Year Number])
+VAR Inflation = [User Selected Inflation]
+VAR Years = (
+    FILTER (
+        ALL ( 'Date'[Calendar Year Number] ),
+        AND ( 
+            'Date'[Calendar Year Number] >= CurrentYear,
+            'Date'[Calendar Year Number] < ReportingYear
+        )
+    )
+)
+VAR Multiplier =
+    MAX ( PRODUCTX ( Years, 1 + Inflation), 1)
+Return
+    Multiplier
+// Last step: use year-by-year basis
+Inflation Adjusted Sales :=
+SUMX (
+    VALUES (
+        'Date'[Calendar Year]
+    ),
+    [Sales Amount] * [Inflation Multiplier]
+)
+// ISFILTERED and ISCROSSFILTERED
+Filter Gender := ISFILTERED (Customer[Gender])
+Cross Filter Sales := ISCROSSFILTERED ('Product')
+//  Some filters might be applied and not being filtering rows effectively
+// a better approach might be count rows with and without filters.
+// VALUES: returns the values visible in the filter context
+// FILTERS: Returns the values that are currently being filtered by the filter context
+// HASONEFILTER: to check inf the columns has only one active filter.
+All Values Type :=
+CALCULATE (
+    [NumOfCustomers],
+    ALL ( Customer ),
+    VALUES ( Customer[Customer Type])
+)
+// Avoid context transition in CALCULATE:
+'Produt'[GlobalPct] =
+VAR SalesProduct = [Sales Amount]
+VAR SalesAllProducts =
+    CALCULATE (
+        [Sales Amount],
+        ALL ('Product')
+    )
+VAR Result =
+    DIVIDE ( SalesProduct, SalesAllProducts )
+Return
+    Result
+// ISEMPTY: test whether a table is empty, meaning that is has no values visible
+// in the current filter context.
+COUNTROWS ( VALUES ('Product'[Color])) = 0
+-- is similar to
+ISEMPTY ( VALUES ( 'Product'[Color] ) )
+// Other example
+NonBuyingCustomers :=
+VAR SelectedCustomers =
+    CALCULATETABLE (
+        DISTINCT ( SALES[CustomerKey]),
+        ALLSELECTED ()
+    )
+VAR CustomerWithOutSales =
+    FILTER (
+        SelectedCustomers,
+        ISEMPTY (RELATEDTABLE(Sales))
+    )
+VAR Result =
+    COUNTROWS (CustomerWithOutSales)
+Return
+    Result
