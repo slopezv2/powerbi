@@ -1,0 +1,41 @@
+/*
+Special function TREATAS: accepts a table as its first argument and then a set of column references. 
+TREATAS updates the data lineage of the table tagging each column with the appropiate target column.
+Test :=
+CALCULATE (
+    [Sales Amount],
+    TREATAS ( {"Red", "Blue"}, 'Product'[Color])
+)
+// Returns a table containing values tagged with the Product[Color] column
+LastBalanceIndividualCustomer Optimized :=
+VAR LastCustomerDate =
+    ADDCOLUMNS (
+        VALUES ( Balances[Name]),
+        "LastDate", CALCULATE (
+            MAX (Balances[Date]),
+            DATESBETWEEN ( 'Date'[Date], BLANK(), MAX (Balances[Date]))
+        )
+    )
+VAR FilterCustomer =
+    TREATAS (
+        LastCustomerDate,
+        Balances[Name],
+        'Date'[Date]
+    )
+VAR SumLastValueBalance =
+    CALCULATE (
+        SUM ( Balances[Balance]),
+        FilterCustomer
+    )
+// iterating over a column with unique values
+Monthly Avg :=
+AVERAGEX (
+    VALUES ('Date'[Calendar Year Month]),
+    [Sales Amount]
+)
+// if there are no unique values column:
+Monthly Avg KeepFilters :=
+AVERAGEX (
+    KEEPFILTERS ( VALUES ('Date'[Month])),
+    [Sales Amount]
+)
