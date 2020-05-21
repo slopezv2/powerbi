@@ -1,0 +1,113 @@
+// ISINSCOPE: returns True if the column passed as the argument is filtered and it is part of the columns used
+// to perform the grouping
+PercOnSubcategory := 
+IF (
+    ISINSCOPE ( Product[Product Name]),
+    DIVIDE (
+        [Sales Amount],
+        CALCULATE (
+            [Sales Amount],
+            ALLSELECTED (Product[Product Name])
+        )
+    )
+)
+//Taking account the cases
+PercOnParent :=
+VAR CurrentSales = [Sales Amount]
+VAR SubcategorySales =
+    CALCULATE (
+        [Sales Amount],
+        ALLSELECTED ( Product[Product Name])
+    )
+VAR CategorySales =
+    CALCULATE (
+        [Sales Amount],
+        ALLSELECTED ( Product[Subcategory])
+    )
+VAR TotalSales =
+    CALCULATE (
+        [Sales Amount],
+        ALLSELECTED(Product[Category])
+    )
+VAR RatioToParent =
+    IF (
+        ISINSCOPE ( Product[Product Name]),
+        DIVIDE (CurrentSales, SubcategorySales),
+        IF (
+            ISINSCOPE ( Product[Subcategory]),
+            DIVIDE ( CurrentSales, CategorySales),
+            IF (
+                ISINSCOPE ( Product[Category]),
+                DIVIDE ( CurrentSales, TotalSales)
+            )
+        )
+    )
+RETURN RatioToParent
+// Parent - child relationships
+// PATH: receives 2 parameters. first is the key of the table, and the second parameter is the name of the column
+// that holds the parent key. Concatenates both keys with pipe 
+People[FullPath] = PATH ( People[PersonKey], People[ParentKey])
+// Classify people by level
+People[Level1] = LOOKUPVALUE ( People[Name], People[PersonKey], PATHITEM( People[FullPath], 1, INTEGER))
+People[Level2] = LOOKUPVALUE (
+    People[Name],
+    People[PersonKey], PATHITEM ( People[FullPath],2, INTEGER)
+)
+People[Level3] = LOOKUPVALUE (
+    People[Name],
+    People[PersonKey], PATHITEM ( People[FullPath],3, INTEGER)
+)
+// Improvements for the las query
+PC[Level2] =
+IF ( PATHLENGTH (People[FullPath]) >= 2,
+    LOOKUPVALUE (
+        People[Name],
+        People[PersonKey], PATHITEM ( People[ FullPath ], 2, INTEGER )
+    ),
+    Persons[Level1]
+)
+People[ NodeDepth] = PATHLENGTH ( People[FullPath])
+// BrowseDepth: Levels being displayed
+BrowseDept :=
+ISINSCOPE ( People[Level1] ) +
+ISINSCOPE ( People [Level2]) +
+ISINSCOPE ( People[Level3] )
+// Hide with BLANK non requested fields
+PC Amount :=
+IF (
+    MAX ( PeopleNodeDepth) < [BrowseDepth],
+    BLANK (),
+    SUM ( Sales[Amount])
+)
+People[IsLeaf] =
+VAR CurrentPersonKey = People[PersonKey]
+VAR PersonsAtParentLevel =
+    CALCULATE (
+        COUNTROWS ( People),
+        ALL (People),
+        People[ParentKey] = CurrentPersonKey
+    )
+VAR Result = ( PersonsAtParentLevel = 0)
+RETURN Result
+FinalFormula =
+VAR TooDeep = [MaxNodeDepth] + 1 < [BrowseDepth]
+VAR AdditionalLevel = [MaxNodeDepth] + 1 = [BrowseDepth]
+VAR Amount = SUM ( Sales[Amount])
+VAR HasData = 
+    NOT ISBLANK (Amount)
+VAR Leaf =
+    SELECTEDVALUE (
+        People[IsLeaf],
+        FALSE
+    )
+VAR Result =
+    IF (
+        NOT TooDeep,
+        IF (
+            AdditionalLevel,
+            IF ( Not Leaf && HasData,
+                Amount
+            ),
+            Amount
+        )
+    )
