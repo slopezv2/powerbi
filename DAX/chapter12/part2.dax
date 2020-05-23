@@ -1,0 +1,60 @@
+// Summarize creates  one row context and one filter context
+// Optimal daily avg
+AvgDailyQty :=
+VAR ProductsDatesWithSales =
+    SUMMARIZE (
+        Sales,
+        'Product'[Product Name],
+        'Date'[Date]
+    )
+VAR ProductsDatesWithSalesAndQty = 
+    ADDCOLUMNS (
+        ProductsDatesWithSales,
+        "Daily qty", CALCULATE ( SUM (Sales[Quantity]))
+    )
+VAR Result = 
+    AVERAGEX (
+        ProductsDatesWithSalesAndQty,
+        [Daily qty]
+    )
+RETURN Result
+// Cross Join returns the product of 2 tables, the cartesian product
+CROSSJOIN (
+    ALL ( 'Product'[Product Name]),
+    ALL ( 'Date'[Calendar Year])
+)
+AudioOr2007 :=
+VAR CategoriesYears =
+    CROSSJOIN (
+        VALUES ( 'Product'[Category]),
+        VALUES ( 'Date'[Calendar Year])
+    )
+VAR Audio2007 = 
+    FILTER (
+        CategoriesYears,
+        OR (
+            'Product'[Category] = "Audio",
+            'Date'[Calendar Year] = "CY 2007"
+        )
+    )
+VAR Result =
+    CALCULATE (
+        [Sales Amount],
+        Audio2007
+    )
+RETURN Result
+// UNION
+AllCountryRegions =
+UNION (
+    ALL (Customer[CountryRegion]),
+    ALL (Store[CountryRegion])
+)
+DistincrCountryRegions =
+VAR CountryRegions =
+    UNION (
+        ALL ( Customer[CountryRegion]),
+        ALL ( Store[CountryRegion])
+    )
+VAR UniqueCountryRegions =
+    DISTINCT ( CountryRegions)
+RETURN UniqueCountryRegions

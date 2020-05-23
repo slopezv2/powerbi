@@ -1,0 +1,86 @@
+// difference between CALCULATETABLE and FILTER: Filter does not replace the filter context
+Red Products CALCULATETABLE =
+CALCULATETABLE (
+    ADDCOLUMNS (
+        VALUES ( 'Product'[Color]),
+        "Num of Products", COUNTROWS ('Product')
+    ),
+    'Product'[Color] = "Red"
+)
+// the same with FILTER
+Red Products FILTER =
+ADDCOLUMNS (
+    FILTER (
+        VALUES ('Product'[Color]),
+        'Product'[Color] = "Red"
+    ),
+    "Num of Products", CALCULATE ( COUNTROWS ('Product'))
+)
+// Frecuently, ADDCOLUMNS and FILTER come together
+HighSalesProducts =
+VAR ProductsWithSales = 
+    ADDCOLUMNS (
+        VALUES ( 'Product'[ProductName]),
+        "Product Sales", [Sales Amount]
+    )
+VAR Result = 
+    FILTER (
+        ProductsWithSales,
+        [Product Sales] >= 150000
+    )
+RETURN Result
+Top Products =
+VAR TotalSales = [Sales Amount]
+VAR ProdsWithSales = 
+    ADDCOLUMNS (
+        VALUES ( 'Product'[Product Name]),
+        "ProductSales", [Sales Amount]
+    )
+VAR ProdsWithRT =
+    ADDCOLUMNS (
+        ProdsWithSales,
+        "RunningTotal",
+        VAR SalesOfCurrentProduct = [Product Sales]
+        RETURN
+            SUMX (
+                FILTER (
+                    ProdsWithSales,
+                    [ProductSales] >= SalesOfCurrentProduct
+                ),
+                [Product Sales]
+            )
+    )
+VAR Top15Percent = 
+    FILTER (
+        ProdsWithRT,
+        [RunningTotal] / TotalSales <= 0.15
+    )
+RETURN Top15Percent
+// Summarize
+-- It scans a table (first argument), grouping columns of the same or other related tables in groups of one or more.
+Num of Colors :=
+COUNTROWS (
+    VALUES ( 'Product'[Color])
+)
+Num of colors sold :=
+COUNTROWS (
+    SUMMARIZE (
+        Sales, 'Product'[Color]
+    )
+)
+// Other example
+AvgDailyQty :=
+VAR ProductsDatesWithSales =
+    SUMMARIZE (
+        Sales,
+        'Product'[Product Name],
+        'Date'[Date]
+    )
+VAR Result =
+    AVERAGEX (
+        ProductsDatesWithSales,
+        CALCULATE (
+            SUM ( Sales[Quantity])
+        )
+    )
+RETURN Result
