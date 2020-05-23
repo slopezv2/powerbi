@@ -1,0 +1,100 @@
+// Same example using TREATAS
+DistinctCountryRegions =
+VAR CountryRegions =
+    UNION (
+        ALL (Customer[CountryRegion]),
+        ALL (Customer[CountryRegion])
+    )
+VAR UniqueCountryRegions =
+    DISTINCT ( CountryRegions)
+VAR Result =
+    ADDCOLUMNS (
+        UniqueCountryRegions,
+        "Customer Sales Amount", CALCULATE (
+            [Sales Amount],
+            TREATAS (
+                { [CountryRegion]},
+                Customer[CountryRegion]
+            )
+        ),
+        "Number of Stores", CALCULATE (
+            COUNTROWS (Store),
+            TREATAS (
+                { [CountryRegion]},
+                Store[CountryRegion]
+            )
+        )
+    )
+// Intersect: returns the intersection of both tables, INTERSECT retains the data lineage of the first table
+CustomersBuyingInTwoYears =
+VAR Customers2007 =
+    CALCULATETABLE (
+        SUMMARIZE (Sales, Customer[Customer Code]),
+        'Date'[Calendar Year] = "CY 2007"
+    )
+VAR Customers2008 =
+    CALCULATETABLE (
+        SUMMARIZE ( Sales, Customer[Customer Code] ),
+        'Date'[Calendar Year] = "CY 2008"
+    )
+VAR Result =
+    INTERSECT ( Customers2007, Customers2008)
+RETURN Result
+// EXCEPT: Subtraction of tables
+CustomersBuyingIn2007ButNotIn2008 =
+VAR Customers2007 =
+    CALCULATETABLE (
+        SUMMARIZE ( Sales, Customer[Customer Code]),
+        'Date'[Calendar Year] = "CY 2007"
+    )
+VAR Customers2008 = 
+    CALCULATETABLE (
+        SUMMARIZE ( Sales, Customer[Customer Code]),
+        'Date'[Calendar Year] = "CY 2008"
+    )
+VAR Result =
+    EXCEPT (Customers2007, Customers2008)
+RETURN Result
+// Other example
+SalesOfNewCustomers :=
+VAR CurrentCustomers =
+    VALUES (  Sales[CustomerKey] )
+VAR CustomersLastYear =
+    CALCULATETABLE (
+        VALUES ( Sales[CustomerKey] ),
+        DATESINPERIOD ( 'Date'[Date], MIN( 'Date'[Date]) -1, -1, YEAR )
+    )
+VAR CustomersNotInLastYear =
+    EXCEPT (CurrentCustomers, CustomersLastYear)
+VAR Result =
+    CALCULATE (
+        [Sales Amount], CustomersNotInLastYear
+    )
+RETURN Result
+// Except retains the lineage from the first table
+// Power BI does not support or conditions between slicers
+// OR TABLES to filter
+OR 2 :=
+VAR CategoriesEducation =
+    CALCULATETABLE (
+        SUMMARIZE (
+            Sales,
+            'Product'[Category],
+            Customer[Education]
+        ),
+        ALL ( 'Product'[Category]),
+        ALL ( Customer[Education])
+    )
+VAR CategoriesEducationSelected 
+    FILTER (
+        CategoriesEducation,
+        OR (
+            'Product'[Category] IN VALUES ('Product'[Category]),
+            Customer[Education] IN VALUES (Customer[Education])
+        )
+    )
+VAR Result = 
+    CALCULATE (
+        [Sales Amount],
+        CategoriesEducationSelected
+    )

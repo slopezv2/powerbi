@@ -58,3 +58,31 @@ VAR CountryRegions =
 VAR UniqueCountryRegions =
     DISTINCT ( CountryRegions)
 RETURN UniqueCountryRegions
+/* Both sales amount and number of stores, including all country regions of both customers and stores */
+DisctinctCountryRegions =
+VAR CountryRegions =
+    UNION(
+        ALL (Customer[CountryRegion]),
+        ALL (Store[CountryRegion])
+    )
+VAR UniqueCountryRegions =
+    DISTINCT (CountryRegions)
+VAR Result =
+    ADDCOLUMNS (
+        UniqueCountryRegions,
+        "Customer Sales Amount",
+            VAR CurrentRegion = [CountryRegion]
+            RETURN 
+                CALCULATE (
+                    [Sales Amount],
+                    Customer[CountryRegion] = CurrentRegion
+                ),
+        "Number of Stores",
+            VAR CurrentRegion = [CountryRegion]
+            RETURN
+                CALCULATE (
+                    COUNTROWS (Store),
+                    Store[CountryRegion] = CurrentRegion
+                )
+    )
+RETURN Result

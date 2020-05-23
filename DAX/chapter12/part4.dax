@@ -1,0 +1,93 @@
+// First year customers
+SalesOfFirstYearCustomers :=
+VAR FirstYearWithSales = 
+    CALCULATETABLE (
+        FIRSTNONBLANK (
+            'Date'[Calendar Year],
+            [Sales Amount]
+        ),
+        ALLSELECTED ()
+    )
+VAR CustomersFirstYear = 
+CALCULATETABLE (
+    VALUES ( Sales[CustomerKey]),
+    FirstYearWithSales,
+    ALLSELECTED ()
+)
+VAR Result =
+    CALCULATE (
+        [Sales Amount],
+        KEEPFILTERS ( CustomersFirstYear)
+    )
+// Computing new customers
+New Customers :=
+VAR CustomersFirstSale =
+    CALCULATETABLE (
+        ADDCOLUMNS (
+            VALUES ( Sales[CustomerKey] ),
+            "FirstSale", CALCULATE (
+                MIN (Sales[Order Date])
+            )
+        ),
+        ALL ('Date')
+    )
+VAR CustomersWith1stSaleInCurrentPeriod =
+    FILTER (
+        CustomersFirstSale,
+        [FirstSale] IN VALUES ('Date'[Date])
+    )
+VAR Result =
+    COUNTROWS ( CustomersWith1stSaleInCurrentPeriod)
+Return Result
+// IN, CONTAINSROW and CONTAINS
+// Are equivalent:
+Product[Color] IN { "Red", "Blue"}
+CONTAINSROW ( {"Red", "Blue"}, Product[Color])
+// Details rows - only available in Analysis Services at the moment:
+VAR LastDateSelected = MAX ( 'Date'[Date])
+RetURN
+    FILTER (
+        ALL ('Date'[Date]),
+        'Date'[Date] <= LastDateSelected
+    )
+Cumulative Sales Amount :=
+CALCULATE (
+    [Sales Amount],
+    DETAILROWS ([Cumulative Total])
+)
+// Creating calculated tables
+SELECTCOLUMNS (
+    Customer,
+    "Customer Name with lineage", Customer[Name],
+    "Customer Name without lineage", Customer[Name] &  ""
+)
+// Create a table with row: returns with the specified columns but one row
+ROW (
+    "Sales", [Sales Amount],
+    "Quantity", SUM (Sales[Quantity])
+)
+// Multiple rows requires DATATABLE
+DATATABLE (
+    "Segment", STRING,
+    "Min", DOUBLE,
+    "Max", DOUBLE,
+    {
+        {"LOW", 0, 20},
+        {"Medium", 20, 50},
+        {"HIGH", 50, 99}
+    }
+)
+// Types: INTEGER, DOUBLE, STRING, BOOLEAN, CURRENCY, DATETIME
+// GENERATESERIES
+Time =
+SELECTCOLUMNS (
+    GENERATESERIES (
+        TIME (0,0,0),
+        TIME(23,59,59),
+        TIME (0,30,0)
+    ),
+    "TIme", [Value],
+    "HH:MM AMPM", FORMAT ([Value], "HH:MM AM/PM"),
+    "Hour", HOUR ([Value]),
+    "Minute", MINUTE([Value])
+)
