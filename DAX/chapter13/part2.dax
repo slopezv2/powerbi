@@ -1,0 +1,88 @@
+//Using SUMMARIZECOLUMNS
+EVALUATE
+SUMMARIZECOLUMNS (
+    'Product'[Category],
+    'Date'[Calendar Year],
+    "Amount", [Sales Amount]
+)
+ORDER BY
+    'Product'[Category],
+    'Date'[Calendar Year]
+// Years with not sales do not appear in the result.
+// To ignore this behaviour, use IGNORE
+EVALUATE
+SUMMARIZECOLUMNS (
+    'Product'[Category],
+    'Date'[Calendar Year],
+    "Amount", IGNORE([Sales Amount])
+)
+ORDER BY
+    'Product'[Category],
+    'Date'[Calendar Year]
+// Multiple groups
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL (
+        'Date'[Calendar Year],
+        "YearTotal"
+    ),
+    ROLLUPADDISSUBTOTAL (
+        'Product'[Category],
+        "CategoryTotal"
+    )
+    "Amount", [Sales Amount]
+)
+ORDER BY 
+    'Product'[Category],
+    'Date'[Calendar Year]
+// Grouping columns and filtering
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL (
+        ROLLUPGROUP (
+            'Product'[Category],
+            'Date'[Calendar Year]
+        ),
+        "CategoryYearTotal"
+    ),
+    FILTER (
+        ALL (Customer[Education]),
+        Customer[Education] = "High School"
+    ),
+    "Amount", [Sales Amount]
+)
+// TREATAS para filtrar
+EVALUATE
+SUMMARIZECOLUMNS (
+    ROLLUPADDISSUBTOTAL (
+        ROLLUPGROUP (
+            'Product'[Category],
+            'Date'[Calendar Year]
+        ),
+        "CategoryYearTotal"
+    ),
+    TREATAS ( {"High School"}, Customer[Education]),
+    "Amount", [Sales Amount]
+)
+// TOPN
+EVALUATE
+VAR ProductsBrands =
+    SUMMARIZE (
+        Sales,
+        'Product'[Product Name],
+        'Product'[Brand]
+    )
+VAR ProductsBrandsSales =
+    ADDCOLUMNS (
+        ProductsBrands,
+        "Product Sales", [Sales Amount]
+    )
+VAR Result = 
+    TOPN (
+        3,
+        ProductsBrandsSales,
+        [Product Sales]
+    )
+RETURN Result
+ORDER BY [Product Sales] DESC
+// In the presence of ties, TOPN is not guaranteed to return the exact number of rows requested.
