@@ -1,0 +1,69 @@
+// Evaluate data
+EVALUATE
+VAR SalesByBrand =
+    ADDCOLUMNS (
+        VALUES ( 'Product'[Brand]),
+        "Product Sales", MROUND ( [Sales Amount], 1000000)
+    )
+VAR Result = 
+    TOPN (
+        4,
+        SalesByBrand,
+        [Product Sales], 0,
+        'Product'[Brand], 1
+    )
+RETURN Result
+ORDER BY [Product Sales] DESC
+// More complex order by
+EVALUATE
+VAR NumOfTopProducts = 10
+VAR ProdsWithSales =
+    ADDCOLUMNS (
+        VALUES ( 'Product'[Product Name]),
+        "Product Sales", [Sales Amount]
+    )
+VAR TopNProducts =
+    TOPN (
+        NumOfTopProducts,
+        ProdsWithSales,
+        [Product Sales]
+    )
+VAR RemainingProducts =
+    EXCEPT ( ProdsWithSales, TopNProducts)
+VAR OtherRow =
+    ROW (
+        "Product Name", "Others",
+        "Product Sales", SUMX (
+            RemainingProducts,
+            [Product Sales]
+        )
+    )
+VAR Result = 
+    UNION ( TopNProducts, OtherRow)
+RETURN Result
+ORDER BY [Product Sales] DESC
+// GENERATE: equivalent to OUTER APPLY in SQL
+EVALUATE
+GENERATE (
+    VALUES ( 'Date'[Calendar Year]),
+    CALCULATETABLE (
+        VAR ProductsSold =
+            SUMMARIZE ( Sales, 'Product'[Product Name])
+        VAR ProductsSales =
+            ADDCOLUMNS ( ProductsSold, "Product Sales". [Sales Amount])
+        VAR Top3Products =
+            TOPN (3, ProductsSales, [Product Sales])
+        RETURN Top3Products
+    )
+)
+ORDER BY
+    'Date'[Calendar Year],
+    [Product Sales] DESC
+// if the expression provided as the second argument of GENERATE produces an empty table, then
+// GENERATE skips the row from the result. If one needs to also retrieve rows of the first table
+// producing an empty result, then GENERATEALL is needed
+// ISONORAFTER utility for pagination
+EVALUATE
+TOPN (
+    501
+)
