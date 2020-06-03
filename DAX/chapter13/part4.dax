@@ -1,0 +1,62 @@
+// ADDMISSINGITEMS: add rows that might have been skipped by summarizecolumns
+EVALUATE
+ADDMISSINGITEMS (
+    'Date'[Calendar Year],
+    SUMMARIZECOLUMNS (
+        'Date'[Calendar Year],
+        "Amt", [Sales Amount]
+    ),
+    'Date'[Calendar Year]
+)
+ORDER BY 'Date'[Calendar Year]
+// TOPNSKIP to send just few rows of a large raw dataset to the data view.
+// Temporal table with NATURALJOIN
+EVALUATE
+VAR AvgSales = 
+    AVERAGEX (
+        VALUES ( 'Product'[Brand]),
+        [Sales Amount]
+    )
+VAR LowerBoundary = AvgSales * 0.8
+VAR UpperBoundary = AvgSales * 1.2
+VAR Categories =
+    DATATABLE (
+        "Cat Sort", INTEGER,
+        "Category", STRING,
+        {
+            0, "Below Average",
+            1, "Around Average",
+            2, "Above Average"
+        }
+    )
+VAR BrandsClassfied =
+    ADDCOLUMNS (
+        VALUES ('Product'[Brand]),
+        "Sales Amt", [Sales Amount],
+        "Cat Sort", SWITCH (
+            TRUE (),
+            [Sales Amount] <= LowerBoundary, 0,
+            [Sales Amount] >= UpperBoundary, 2,
+            1
+        )
+    )
+VAR JoinedResult =
+    NATURALINNERJOIN (
+        Categories,
+        BrandsClassfied
+    )
+RETURN JoinedResult
+ORDER BY 
+    [Cat Sort],
+    'Product'[Brand]
+// SAMPLE returns a sample of rows from a table
+EVALUATE
+SAMPLE (
+    10,
+    ADDCOLUMNS (
+        VALUES ( 'Product'[Product Name]),
+        "Sales", [Sales Amount]
+    ),
+    'Product'[Product Name]
+)
+ORDER BY 'Product'[Product Name]

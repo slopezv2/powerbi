@@ -65,5 +65,27 @@ ORDER BY
 // ISONORAFTER utility for pagination
 EVALUATE
 TOPN (
-    501
+    501,
+    FILTER (
+        KEEPFILTERS (
+            SUMMARIZECOLUMNS (
+                'Product'[Category],
+                'Product'[Color],
+                'Product'[Product Name],
+                "Sales_Amount", 'Sales'[sales Amount]
+            )
+        ),
+        ISONORAFTER (
+            'Product'[Category], "Audio", ASC,
+            'Product'[Color], "Yellow", ASC,
+            'Product'[Name], "WWI Stereo", ASC
+        )
+    ),
+    'Product'[Category], 1,
+    'Product'[Color], 1,
+    'Product'[Name], 1
 )
+ORDER BY
+    'Product'[Category],
+    'Product'[Color],
+    'Product'[Name]
