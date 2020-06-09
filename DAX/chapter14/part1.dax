@@ -1,0 +1,39 @@
+// Expanded table: from the table in many side with the columns of the one side table
+EVALUATE
+VAR SalesA =
+    CALCULATETABLE (
+        Sales,
+        USERELATIONSHIP (Sales[Order Date], 'Date'[Date])
+    )
+VAR SalesB =
+    CALCULATETABLE (
+        Sales,
+        USERELATIONSHIP (Sales[Delivery Date], 'Date'[Date])
+    )
+RETURN
+    GENERATE (
+        VALUES ('Date'[Calendar Year]),
+        VAR CurrentYear = 'Date'[Calendar Year]
+        RETURN
+            ROW (
+                "Sales From A", COUNTROWS (
+                    FILTER (
+                        SalesA,
+                        RELATED ( 'Date'[Calendar Year]) = CurrentYear
+                    )
+                ),
+                "Sales from B", COUNTROWS (
+                    FILTER (
+                        SalesB,
+                        RELATED ('Date'[Calendar Year]) = CurrentYear
+                    )
+                )
+            )
+    )
+// LOOKUPVALUE
+Sales[DeliveryQuarter] =
+LOOKUPVALUE (
+    'Date'[Calendar Year Quarter],
+    'Date'[Date],
+    Sales[Delivery Date]
+)
