@@ -1,0 +1,88 @@
+// Advanced relationship
+Sales[DiscountKey] =
+COMBINEVALUES (
+    "-",
+    Sales[Order Date],
+    Sales[ProductKey]
+)
+Discounts[DiscountKey] =
+COMBINEVALUES(
+    "-",
+    Discounts[Date],
+    Discounts[ProductKey]
+)
+// LOOOKUP
+Sales[Discount] =
+LOOKUPVALUE (
+    Discounts[Discount],
+    Discounts[ProductKey], Sales[ProductKey],
+    Discounts[Date], Sales[Order Date]
+)
+// Other example
+Sales[PriceRangeKey] = 
+VAR FilterPriceRanges =
+    FILTER (
+        PriceRanges,
+        AND (
+            PrinceRanges[MinPrice] <= Sales[Net Price],
+            PriceRanges[MaxPrice] > Sales[Net Price]
+        )
+    )
+VAR Result =
+    CALCULATE (
+        IFERROR (
+            VALUES ( PriceRanges[PriceRangeKey]),
+            BLANK ()
+        ),
+        FilterPriceRanges
+    )
+RETURN
+    Result
+// Use DISTINCT to break the circular dependency
+// Using DISTINCT instead of VALUES
+// Using ALLNOBLANCKROW instead of ALL
+// Beware of CALCULATE with filters using the compact syntax
+Advertised Brand Sales TreatAs :=
+VAR AdvertisedBrands =
+    SUMMARIZE (
+        'Advertised Brands',
+        'Advertised Brands'[Brand],
+        'Advertised Brands'[Calendar Year],
+        'Advertised Brands'[Month]
+    )
+VAR FilterAdvertisedBrands =
+TREATAS (
+    AdvertisedBrands,
+    'Product'[Brand],
+    'Date'[Calendar Year],
+    'Date'[Month]
+)
+VAR Result = 
+    CALCULATE ( [Sales Amount], KEEPFILTERS (FilterAdvertisedBrands))
+RETURN
+    Result
+// Transferring a filter using FILTER
+Advertised Brand Sales Contains :=
+VAR SelectedBrands =
+    SUMMARIZE (
+        'Sales',
+        'Product'[Brand],
+        'Date'[Calendar Year],
+        'Date'[Month]
+    )
+VAR FilterAdvertisedBrands = 
+    FILTER (
+        SelectedBrands,
+        CONTAINS (
+            'Advertised Brands',
+            'Advertised Brands'[Brand], 'Product'[Brand],
+            'Advertised Brands'[Calendar Year], 'Date'[Month] 
+        )
+    )
+VAR Result =
+    CALCULATE (
+        [Sales Amount],
+        FilterAdvertisedBrands
+    )
+RETURN 
+    Result

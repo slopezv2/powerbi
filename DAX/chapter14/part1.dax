@@ -37,3 +37,46 @@ LOOKUPVALUE (
     'Date'[Date],
     Sales[Delivery Date]
 )
+// ALLSELECTED can be used to retrieve the outer filter context if and only if it is being used in a measure that is directly projected in a matrix or in a visual.
+EVALUATE
+VAR Brands =
+    FILTER (
+        ALL ( 'Product'[Brand] ),
+        'Product'[Brand]
+        IN {
+            "Adventure Works",
+            "Contoso"
+        }
+    )
+RETURN
+    CALCULATETABLE ( 
+        ADDCOLUMNS (
+            ALL ( 'Product'[Brand]),
+            "Sales_Amount", [Sales Amount],
+            "Pct", [Pct]
+        ),
+        Brands
+    )
+// Data lineage
+DEFINE
+    MEASURE Sales[Sales Amount] =
+        SUMX ( Sales, Sales[Quantity] * Sales[Net Price] )
+EVALUATE
+VAR NonBlueColors =
+    FILTER (
+        ALL ( 'Product'[Color]),
+        'Product'[Color] <> "Blue" 
+    )
+VAR AddC2 =
+    ADDCOLUMNS (
+        NonBlueColors,
+        "[C2]", 'Product'[Color]
+    )
+VAR SelectOnlyC2 = 
+    SELECTCOLUMNS ( AddC2, "C2", [C2])
+VAR TreatAsColor =
+    TREATAS ( SelectOnlyC2, 'Product'[Color])
+VAR Result =
+    ADDCOLUMNS ( TreatAsColor, "Sales Amount", [Sales Amount])
+RETURN Result
+ORDER BY 'Product'[Color]
