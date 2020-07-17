@@ -1,0 +1,24 @@
+// Computing the working days between 2 dates
+Avg Delivery :=
+AVERAGEX (
+    Sales,
+    INT (Sales[Delivery Date] - Sales[Order Date] + 1)
+)
+Avg Delivery WD :=
+AVERAGEX (
+    Sales,
+    VAR RangeOfDates =
+        DATESBETWEEN (
+            'Date'[Date],
+            Sales[Order Date],
+            Sales[Delivery Date]
+        )
+    VAR WorkingDates =
+        FILTER (
+            RangeOfDates,
+            NOT ( WEEKDAY ('Date'[Date]) IN {1, 7})
+        )
+    VAR NumberOfWorkingDays =
+        COUNTROWS ( WorkingDates)
+    RETURN NumberOfWorkingDays
+)

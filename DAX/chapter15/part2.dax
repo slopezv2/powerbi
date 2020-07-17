@@ -1,0 +1,22 @@
+// Filtering by both tables, common dimension require
+Budget Amt:=
+CALCULATE (
+    SUM ( Budget[Budget] ),
+    TREATAS (
+        VALUES ( Customer[CountryRegion] ),
+        Budget[CountryRegion]
+    ),
+    TREATAS (
+        VALUES ( 'Product'[Brand]),
+        Budget[Brand]
+    )
+)
+// Approach: Calculated tables for dimensions
+CountryRegions =
+DISTINCT (
+    UNION (
+        DISTINCT ( 'Product'[CountryRegion]),
+        DISTINCT ( 'Customer'[CountryRegion])
+    )
+)
+//...
