@@ -20,3 +20,45 @@ VAR Position =
     )
 RETURN
     Position
+// past year sales considering last period with no complete data
+PY Sales :=
+VAR LastDateInSales = 
+    CALCULATETABLE (
+        LASTDATE ( Sales[Order Date] ),
+        ALL ( Sales )
+    )
+VAR LastDateInDate =
+    TREATAS(
+        LastDateInSales,
+        'Date'[Date]
+    )
+VAR PreviousYearLastDate =
+    SAMEPERIODLASTYEAR ( LastDateInDate)
+VAR PreviousYearSales =
+    CALCULATE (
+        [Sales Amount],
+        SAMEPERIODLASTYEAR ('Date'[Date] ),
+        'Date'[Date] <= PreviousYearLastDate
+    )
+RETURN
+    PreviousYearSales
+// faster implementation for the last calculation
+'Date'[IsComparable] =
+VAR LastDateInSales =
+    MAX ( Sales[Order Date] )
+VAR LasthMonthInSales =
+    MONTH ( LastDateInSales )
+VAR LastDayInSales =
+    DAY (LastDateInSales)
+VAR LastDateCurrentYear =
+    DATE ( YEAR ('Date'[Date] ), LasthMonthInSales, LastDayInSales )
+VAR DateIncludedInCompare = 
+    'Date'[Date] <= LastDateCurrentYear
+RETURN
+    DateIncludedInCompare
+PY Sales :=
+CALCULATE (
+    [Sales Amount],
+    SAMEPERIODLASTYEAR ( 'Date'[Date] ),
+    'Date'[IsComparable] = TRUE
+)
