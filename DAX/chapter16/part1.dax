@@ -22,3 +22,63 @@ AVERAGEX (
         COUNTROWS ( WorkingDates)
     RETURN NumberOfWorkingDays
 )
+// Considering a table with for dates with holidays info
+Avg Delivery WD DT :=
+AVERAGEX (
+    Sales,
+    VAR RangeOfDates =
+        DATESBETWEEN (
+            'Date'[Date],
+            Sales[Order Date],
+            Sales[Delivery Date]
+        )
+    VAR NumberOfWorkingDays =
+        CALCULATE (
+            COUNTROWS ( 'Date'),
+            RangeOfDates,
+            NOT ( WEEKDAY ( 'Date'[Date]) IN {1, 7}),
+            'Date'[Is Holiday] = 0
+        )
+    RETURN
+        NumberOfWorkingDays
+)
+Avg Delivery ED WA :=
+VAR NumOfAllOrders =
+    COUNTROWS ( Sales )
+VAR CombinationsOrderDeliveryDates =
+    SUMMARIZE (
+        Sales,
+        Sales[Order Date],
+        Sales[Delivery Date]
+    )
+VAR DeliveryWeightedByNumberOfOrders =
+    SUMX (
+        CombinationsOrderDeliveryDates,
+        VAR RangeOfDates =
+            DATESBETWEEN (
+                'Date'[Date],
+                Sales[Order Date],
+                Sales[Delivery Date]
+            )
+        VAR NumOfOrders =
+            CALCULATE (
+                COUNTROWS (Sales)
+            )
+        VAR WorkingDays =
+            CALCULATE (
+                COUNTROWS ('Date'),
+                RangeOfDates,
+                NOT ( WEEKDAY ('Date'[Dale]) IN {1,7}),
+                'Date'[Is Holiday] = 0
+            )
+        VAR NumberOfWorkingDays = NumberOfWorkingDays * workingDays
+        RETURN
+            NumberOfWorkingDays
+    )
+VAR AverageWorkingDays =
+    DIVIDE (
+        DeliveryWeightedByNumberOfOrders,
+        NumOfAllOrders
+    )
+RETURN
+    AverageWorkingDays

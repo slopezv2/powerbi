@@ -1,0 +1,22 @@
+Sales[Order Date]=
+VAR CurrentCustomerKey = Sales[CustomerKey]
+VAR CustomerOrders =
+    ALL (
+        Sales[CustomerKey],
+        Sales[Order Number]
+    )
+VAR OrdersCurrentCustomer =
+    FILTER (
+        CustomerOrders,
+        Sales[CustomerKey] = CurrentCustomerKey
+    )
+VAR Position = 
+    RANKX (
+        OrdersCurrentCustomer,
+        Sales[Order Number],
+        Sales[Order Number],
+        ASC,
+        DENSE
+    )
+RETURN
+    Position
