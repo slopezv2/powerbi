@@ -1,0 +1,6 @@
+* ProcessingTimeBoxSecPerMRow: time per million row to find the best sort algorythm, it goes in the configuration file for SSAS service.
+* When processing a table, SSAS splits in 8 million segments the data, power bi is 1 million
+    DefaultSegmentRowCount prop in SSAS
+* DISCOVER_OBJECT_MEMORY_USAGE: DMV to discover the memory usage of all the objects in SSAS instance
+* DISCOVER_SESSIONS, DISCOVER_CONNECTIONS, DISCOVER COMMANDS are used by SSAS Activity Monitor
+* For SSAS Sizing review: Hardware Sizing a Tabular Solution (SQL Server Analysis Services) 

@@ -1,0 +1,52 @@
+Information to collect for each object in a database
+    * Table: Number of rows
+    * Column: Number of unique Values, Size of dictionary, Size of data (Total size of all segments),
+    * Hierarchy: Size of hierarchy structure
+    * Relationship Size of Relationship structure
+
+Vertipaq Analyzer:
+    * Cardinality: number of unique values in a column
+    * Rows: Number of rows in the table
+    * Table Size: Size of the table in bytes. This metric contains the sum of Data Size, Dictionary Size and columns Hierarchies Size.
+    * Data Size: Size in bytes of all the compressed data in segments and partitions. It does not include dictionary and column hierarchies. This number depends on the compression
+        of the column, which, in turn, depends on the number of unique values and the distribution of data across the table.
+    * Dictionary Size: Size in bytes of the dictionary structures. This number is only relevant for columns with hash encoding.
+    * Columns Hierarchies Size: Size in bytes of the automatically generated attribute hierarchies for columns.
+    * Encoding: Type of encoding (hash or value).
+    * User Hierarchies Size: Bytes of user-defined hierarchies.
+    * Relationship Size: Bytes of relationships between tables. The relationship size is related to the table on the many-side of a relationship. The size
+      of a relationship depends on the Cardinality of the columns involved in the relationship, although this is usually a tiny fraction of the cost of table.
+    * Table Size %: Ration of columns Total Size versus Table Size
+    * Database Size %: Ratio of table size versus database size, which is the sum of Table Size for all tha tables.
+    * Segments #: Number of segments. All the columns of a table have the same number of segments of the table.
+    * Partitions #: Number of partitions. All the columns of a table have the same number of partitions of the table
+    * Columns #: Number of columns
+    * In Vertipaq, relationships with Cardinality larger than 1 million unique values are particularly expensive
+Sales Amount :=
+IF (
+    ISCROSSFILTERED ( Customer[CustomerKey]),
+    CALCULATE (
+        [Sales Internal].
+        USERELATIONSHIP ( Customer[CustomerInfoKey], 'Customer Info'[CustomerInfoKey]),
+        CROSSFILTER ( Sales[CustomerInfoKey], 'Customer Info'[CustomerInfoKey], NONE)
+    ),
+    [Sales Internal]
+)
+Sales[IsExpensive] =
+VAR UnitPrice =
+    IF (
+        Sales[Unit Discount] > 0.
+        RELATED ( 'Product[Unit Price]),
+        Sales[Net Price]
+    )
+VAR IsLargeTransaction = UnitPrice * Sales[Quantity] > 100
+VAR IsLargePrice = UnitPrice > 70
+VAR IsExpensive = IsLargeTransaction || IsLargePrice
+RETURN
+    IsExpensive
+
+ExpensiveTransactions :=
+CALCULATE (
+    COUNTROWS (Sales),
+    Sales[IsExpensive] = TRUE
+)
