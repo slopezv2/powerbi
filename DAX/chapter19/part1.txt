@@ -1,0 +1,79 @@
+Optimizing DAX Queries:
+1. Identify a single DAX Expression to optimize
+2. Create a query that reproduces the issue
+3. Analyze server timings and query plan information
+4. Identify bottlenecks in the storage engine or formula engine
+5. Implement changes and rerun the test query
+
+To test a query you can use the MEASURE syntax to avoid making changes in the model:
+DEFINE
+    MEASURE Sales[Sales Amount] =
+        SUMX ( Sales, Sales[Quantity] * Sales[Net Price])
+EVALUATE
+CALCULATABLE (
+    { [Sales Amount] },
+    'Date' [Calendar Year] = "CY 2008",
+    'Date' [Calendar Year Quarter] = "Q4-2008",
+    'Date' [Calendar Year Month] = "November 2008"
+)
+
+bottlenecks in DAX:
+* Longer scan time: The cost for a column scan depends on the size of th column, number of unique values and on data distribution.
+* Large cardinality: Large number of unique values affects the DISTINCTCOUNT, filters in CALCULATABLE, CALCULATE.
+* High frecuency of CallbackDataID: A large number of calls made by the storage engine to the formula engine can affect  the overall performance.
+* Large materialization: If a storage engine query produces a large datache, its generation requires time (allocation and writing RAM), its consumption by the formula engine
+is also another potencial bbttleneck.
+
+As a rule of thumb, replacing a conditional statement with a filter argument in CALCULATE is usually a good idea
+
+Use Divide over IF to control division by zero
+
+example:
+1.
+SUMX (
+    Sales,
+    Sales[Quantity] * Sales[Net Price] * IF (
+        Sales[Quantity] >= 3,
+        .9,
+        1
+    )
+)
+2.
+CALCULATE (
+    SUMX (
+        Sales,
+        Sales[Quantity] * Sales[Net Price]
+    ) * 9,
+    KEEPFILTERS ( Sales[Quantity] >= 3)
+) + CALCULATE (+
+    SUMX (
+        Sales,
+        Sales[Quantity] * Sales[Net Price]
+    ),
+    KEEPFILTERS ( NOT (Sales[Quantity] >= 3))
+)
+
+Note: The SWITCH is similar to a series of nested IF functions and can be optimized in a similiar way
+
+Optimizing round:
+1.
+Sales[Rounded Sales] :=
+    SUMX (
+        Sales,
+        Sales[Quantity] * ROUND ( Sales[Net Price], 0)
+    )
+2. optimized
+Sales[Rounded Sales] :=
+    SUMX (
+        VALUES( Sales[Net Price]),
+        CALCULATE ( SUM (Sales[Quantity])) * ROUND (Sales[Net Price], 0)
+    )
+
+using SUMX:
+Sales[Cashback Sim] =
+    SUMX (
+        Sales,
+        Sales[Quantity]
+            * RELATED ('Product'[Unit Pric3])
+            * RELATED ( Customer[Cashback %])
+    )

@@ -1,0 +1,42 @@
+Avoiding table filters for DISTINCTCOUNT
+1. Avoid:
+Sales[Customers 1k] :=
+CALCULATE (
+    DISTINCTCOUNT ( Sales[CustomerKey]),
+    FILTER (
+        Sales,
+        Sales[Quantity]* Sales[Net Price] > 1000
+    )
+)
+2. optimized
+Sales[Customers 1k] :=
+CALCULATE (
+    DISTINCTCOUNT ( Sales[CustomerKey]),
+    KEEPFILTERS (
+        FILTER (
+            ALL (
+                Sales[Quantity],
+                Sales[Net Price]
+            ),
+            Sales[Quantity] * Sales[Net Price] > 1000
+        )
+    )
+)
+// Optimize using variables
+Sales[Sales YOY] :=
+    IF (
+        NOT ISBLANK ([Sales Amount]) && ISBLANK([Sales PY]),
+        [Sales Amount] - [Sales PY]
+    )
+Using vaiables:
+Sales[ Sales YOY] :=
+    VAR SalesPY = [Sales PY]
+    VAR SalesAmount = [Sales Amount]
+    RETURN (
+        IF (
+            NOT ISBLANK ( SalesAmount) && NOT ISBLANK(SalesPY),
+            SalesAmount - SalesPY
+        )
+    )
+
+Do not assign a variable outside an IF or SWITCH statement if the variable is only used within the conditional branch
